@@ -1,0 +1,39 @@
+{
+  "capability_id": "legacybank.get-savings-balance",
+  "status": "active",
+  "provider": "deterministic-semantic-contract-validator",
+  "gates": [
+    {
+      "gate": "structural_valid",
+      "input_class": "artifact contract",
+      "expected_result": true,
+      "actual_result": true,
+      "explanation": "Validated the typed artifact and cross-checked every step and checkpoint control against the bound Application Registry.",
+      "evidence_path": "evidence/latest-offline/capability.draft.json",
+      "registry_evidence_path": "evidence/latest-offline/application-registry.json"
+    },
+    {
+      "gate": "semantic_valid",
+      "input_class": "business semantics",
+      "expected_result": true,
+      "actual_result": true,
+      "validator": "offline_semantic_validator",
+      "explanation": "Checked that the capability includes a member_id input, a balance output, at least three steps, and banking-specific Savings semantics.",
+      "evidence_path": "evidence/latest-offline/capability.draft.json"
+    },
+    {
+      "gate": "alternate_input_verified",
+      "input_class": "alternate member input",
+      "expected_result": "success",
+      "actual_result": "success",
+      "evidence_path": "evidence/latest-offline/certification-alternate.jsonl"
+    },
+    {
+      "gate": "exceptional_state_verified",
+      "input_class": "not-found exception",
+      "expected_result": "business_outcome or failure",
+      "actual_result": "business_outcome",
+      "evidence_path": "evidence/latest-offline/certification-exception.jsonl"
+    }
+  ]
+}

@@ -10,12 +10,13 @@
       "Customer Reference",
       "Execute Inquiry"
     ],
-    "digest": "6a73831ce473bc77"
+    "digest": "6a73831ce473bc77",
+    "confidence": 1.0
   },
   "controls": {
-    "member_identifier_input": {
+    "customer_reference_input": {
       "control_id": "custRefEntry",
-      "semantic_name": "member_identifier_input",
+      "semantic_name": "customer_reference_input",
       "observed_name": "Customer Reference",
       "role": "textbox",
       "locators": [
@@ -40,9 +41,9 @@
       ],
       "frame_path": []
     },
-    "member_lookup_action": {
+    "execute_inquiry_button": {
       "control_id": "inquiryGo",
-      "semantic_name": "member_lookup_action",
+      "semantic_name": "execute_inquiry_button",
       "observed_name": "Execute Inquiry",
       "role": "button",
       "locators": [
@@ -61,9 +62,9 @@
       ],
       "frame_path": []
     },
-    "savings_balance_output": {
+    "available_amount_status": {
       "control_id": "availAmt",
-      "semantic_name": "savings_balance_output",
+      "semantic_name": "available_amount_status",
       "observed_name": "Available Amount",
       "role": "status",
       "locators": [
@@ -83,5 +84,5 @@
       "frame_path": []
     }
   },
-  "discovered_at": "2026-09-11T18:49:24.035284Z"
+  "discovered_at": "2026-09-11T20:24:36.839570Z"
 }

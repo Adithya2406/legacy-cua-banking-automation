@@ -1,0 +1,73 @@
+{
+  "success": {
+    "kind": "success",
+    "code": "CAPABILITY_COMPLETED",
+    "message": "all checkpoints passed",
+    "outputs": {
+      "balance": 17482.91
+    },
+    "step_id": null,
+    "evidence": [
+      "evidence/latest-offline/replay-success/replay-step-1.png",
+      "evidence/latest-offline/replay-success/replay-step-2.png",
+      "evidence/latest-offline/replay-success/replay-step-3.png"
+    ],
+    "recovered_conditions": [],
+    "expected": null,
+    "observed": null,
+    "retry_info": {},
+    "human_intervention_available": false
+  },
+  "not_found": {
+    "kind": "business_outcome",
+    "code": "MEMBER_NOT_FOUND",
+    "message": "No matching customer record",
+    "outputs": {},
+    "step_id": "step-3",
+    "evidence": [
+      "evidence/latest-offline/replay-not-found/replay-step-3.png"
+    ],
+    "recovered_conditions": [],
+    "expected": "visible state contains No matching customer record",
+    "observed": "matched:no_matching_customer_record",
+    "retry_info": {},
+    "human_intervention_available": false
+  },
+  "recovered": {
+    "kind": "success",
+    "code": "CAPABILITY_COMPLETED",
+    "message": "all checkpoints passed",
+    "outputs": {
+      "balance": 17482.91
+    },
+    "step_id": null,
+    "evidence": [
+      "evidence/latest-offline/replay-recovered/replay-step-1.png",
+      "evidence/latest-offline/replay-recovered/replay-step-2.png",
+      "evidence/latest-offline/replay-recovered/replay-step-3.png",
+      "evidence/latest-offline/replay-recovered/recovered-step-3.png"
+    ],
+    "recovered_conditions": [
+      "TRANSIENT_HOST_DELAY"
+    ],
+    "expected": null,
+    "observed": null,
+    "retry_info": {},
+    "human_intervention_available": false
+  },
+  "failure": {
+    "kind": "failure",
+    "code": "CUA-RPL-004",
+    "message": "Host system unavailable",
+    "outputs": {},
+    "step_id": "step-3",
+    "evidence": [
+      "evidence/latest-offline/replay-failure/replay-step-3.png"
+    ],
+    "recovered_conditions": [],
+    "expected": "visible state excludes Host system unavailable",
+    "observed": "matched:host_system_unavailable",
+    "retry_info": {},
+    "human_intervention_available": false
+  }
+}

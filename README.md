@@ -29,7 +29,7 @@ Playwright observation ---- screenshot + semantic control metadata
      success | business outcome | recovered | failure
 ```
 
-The registry answers “what do controls mean in this app/version?” The capability answers “what procedure should run?” Multiple procedures can reuse one registry, while tenant/version fingerprints prevent accidental cross-version application.
+The registry answers “what do controls mean in this app/version?” The capability answers “what procedure should run?” Multiple procedures can reuse one registry, while tenant/version fingerprints prevent accidental cross-version application. Exception handling uses explicit visible-state matchers instead of inventing registry controls that were never observed. Certification cross-checks every compiled step and checkpoint control against the bound registry before activation.
 
 ## Repository layout
 
@@ -116,7 +116,7 @@ legacy-cua discover \
   --output artifacts/runtime
 ```
 
-The prompt sends a compressed list of **observed** controls and the current screenshot to a vision-capable model. The model must return a typed decision selecting an `observed_id`; invalid IDs are rejected rather than silently converted into a selector. The registry control IDs and locators are constructed from those live observations, not fabricated or predefined in the discovery engine. Provider logs retain only non-secret metadata such as the model, response ID, token counts, and whether a screenshot was supplied.
+The prompt sends a compressed list of **observed** controls and the current screenshot to a vision-capable model. The model must return a typed decision selecting an `observed_id`; invalid actions or IDs are rejected rather than silently converted into a selector. In headed discovery, a rejected decision triggers same-session human handoff, re-observation, and a fresh provider decision; if the replacement is still invalid, discovery stops. The registry control IDs and locators are constructed from those live observations, not fabricated or predefined in the discovery engine. Provider logs retain only non-secret metadata such as the model, response ID, token counts, and whether a screenshot was actually supplied. A model that rejects images must be rerun with a vision-capable model to claim screenshot-backed discovery.
 
 Certify, including deterministic alternate-input and exceptional-state verification, then use the reviewer fast path:
 
@@ -175,11 +175,11 @@ legacy-cua record-hitl \
 
 This command always opens a visible browser and requires an actual person to resolve the supervisor dialog and press Enter. There is no production auto-click path.
 
-When the deterministic rule sees the supervisor gate, `SessionOwnershipController` changes owner from `automation` to `human`, keeps the same browser/context/page alive, and blocks the automation event loop. The human clicks **Supervisor Continue** in that existing window, then presses Enter in the terminal. Browser listeners record clicks/input/change events only while ownership is human. Ownership returns to automation, replay re-observes the page, proves the supervisor gate is gone, and continues the compiled step. If the state is still blocked it stops with `CUA-HITL-002`. Approved artifacts are never rewritten from human actions; proposed improvements would create a new draft version.
+When the deterministic rule sees the supervisor gate, `SessionOwnershipController` changes owner from `automation` to `human`, keeps the same browser/context/page alive, and blocks the automation event loop. The human clicks **Supervisor Continue** in that existing window, then presses Enter in the terminal. Browser listeners record only sanitized event metadata (event type, tag, stable ID, role, and accessible/name attribute) while ownership is human; they never persist page text or input values. Ownership returns to automation, replay re-observes the page, proves the supervisor gate is gone, and continues the compiled step. If the state is still blocked it stops with `CUA-HITL-002`. Approved artifacts are never rewritten from human actions; proposed improvements would create a new draft version.
 
 ## Determinism and targeting
 
-Each registry control contains a ranked locator bundle derived from the observed UI: exact accessible role/name, associated label, and observed DOM ID. Replay applies fixed resolution and uniqueness rules. It never asks a model to interpret a changed page. Every step is transaction-like: observe exceptions, policy-check, resolve, act, and verify checkpoints. Only `safe_to_retry` actions receive bounded retries.
+Each registry control contains a ranked locator bundle derived from the observed UI: exact accessible role/name, associated label, and observed DOM ID. Replay applies fixed resolution and uniqueness rules. It never asks a model to interpret a changed page. Every step is transaction-like: observe exceptions, policy-check, resolve, act, and verify checkpoints. Only `safe_to_retry` actions receive bounded retries. Known UI outcomes—including failed post-handoff validation—persist bounded state labels rather than full page text. Error paths retain the pre-action screenshot and the post-error screenshot when capture succeeds.
 
 `ReplayEngine` does not import, receive, or construct a discovery provider. A source-level test can therefore verify the boundary, while behavior tests prove replay succeeds using only the artifact, registry, input, surface, and logger.
 
@@ -203,6 +203,7 @@ Policy is enforced outside the model for both discovery and replay. It checks do
 | `CUA-DISC-001` | Discovery exceeded max steps | Failure; stop and review |
 | `CUA-DISC-002` | Discovery reached a dead end | Low intervention |
 | `CUA-DISC-003` | Model selected invalid/unobserved control | Low intervention |
+| `CUA-DISC-004` | Discovery elapsed-time budget exceeded | Failure; stop and review |
 | `CUA-POL-001` | Domain outside allowlist | Hard safety failure |
 | `CUA-POL-002` | Route outside allowlist | Hard safety failure |
 | `CUA-POL-003` | Action outside allowlist | Hard safety failure |
@@ -213,6 +214,9 @@ Policy is enforced outside the model for both discovery and replay. It checks do
 | `CUA-RPL-004` | Application reported hard failure | Medium intervention |
 | `CUA-RPL-005` | Session expired | Recover only with configured deterministic login |
 | `CUA-RPL-006` | Invocation input invalid | Caller-correctable failure |
+| `CUA-RPL-007` | Artifact family or registry digest mismatch | Hard compatibility failure before action |
+| `CUA-RPL-008` | Observed application fingerprint mismatch or low confidence | Hard compatibility failure before action |
+| `CUA-RPL-009` | Unexpected browser/runtime exception | Structured failure with step, evidence, and retry context |
 | `CUA-CERT-001` | Capability is not active | Replay blocked |
 | `CUA-CERT-002` | Certification gate failed | Remains draft/unapproved |
 | `CUA-HITL-001` | Human intervention required | Low/Medium/High from matching rule |
@@ -226,11 +230,11 @@ Informational events use `CUA-INFO-*` and are not errors.
 pytest -q
 ```
 
-The tests cover discovery-to-compile behavior using observed control IDs, deterministic success, business outcomes, policy denials, sensitive log redaction, and ownership handoff on one retained surface. The browser-backed `demo-e2e` command is the executable integration proof.
+The tests cover discovery-to-compile behavior using observed control IDs, deterministic success, business outcomes, policy denials, sensitive log redaction, ownership handoff on one retained surface, registry/fingerprint compatibility, malformed and inactive inputs, native runtime failures, and the no-automated-human-click boundary. The browser-backed `demo-e2e` command is the executable integration proof.
 
 ## Evidence provenance
 
-`evidence/` contains a manifest describing whether discovery used a real model or the offline fixture. Never relabel offline output as provider-backed evidence. To satisfy the assignment's strict “genuine LLM run” ground rule, use a vision-capable model and commit the generated log/artifact/screenshot set. Logs store provider provenance and model-input modalities but never credentials, endpoint URLs, or raw member identifiers.
+`evidence/` contains a manifest describing whether discovery used a real model or the offline fixture, whether screenshot input was actually supplied, and whether interactive HITL was recorded. Never relabel offline output or a text-only fallback as screenshot-backed evidence. To satisfy the assignment's strict “genuine LLM run” ground rule, use a vision-capable model and commit the generated log/artifact/screenshot set. Logs store provider provenance and model-input modalities but never credentials, endpoint URLs, raw member identifiers, page text, or input values.
 
 ## Known cuts
 

@@ -9,9 +9,14 @@
     "step_id": null,
     "evidence": [
       "evidence/provider-backed/replay-success/replay-step-1.png",
-      "evidence/provider-backed/replay-success/replay-step-2.png"
+      "evidence/provider-backed/replay-success/replay-step-2.png",
+      "evidence/provider-backed/replay-success/replay-step-3.png"
     ],
-    "recovered_conditions": []
+    "recovered_conditions": [],
+    "expected": null,
+    "observed": null,
+    "retry_info": {},
+    "human_intervention_available": false
   },
   "not_found": {
     "kind": "business_outcome",
@@ -22,7 +27,11 @@
     "evidence": [
       "evidence/provider-backed/replay-not-found/replay-step-3.png"
     ],
-    "recovered_conditions": []
+    "recovered_conditions": [],
+    "expected": "visible state contains No matching customer record",
+    "observed": "matched:no_matching_customer_record",
+    "retry_info": {},
+    "human_intervention_available": false
   },
   "recovered": {
     "kind": "success",
@@ -34,11 +43,17 @@
     "step_id": null,
     "evidence": [
       "evidence/provider-backed/replay-recovered/replay-step-1.png",
-      "evidence/provider-backed/replay-recovered/replay-step-2.png"
+      "evidence/provider-backed/replay-recovered/replay-step-2.png",
+      "evidence/provider-backed/replay-recovered/replay-step-3.png",
+      "evidence/provider-backed/replay-recovered/recovered-step-3.png"
     ],
     "recovered_conditions": [
       "TRANSIENT_HOST_DELAY"
-    ]
+    ],
+    "expected": null,
+    "observed": null,
+    "retry_info": {},
+    "human_intervention_available": false
   },
   "failure": {
     "kind": "failure",
@@ -49,6 +64,30 @@
     "evidence": [
       "evidence/provider-backed/replay-failure/replay-step-3.png"
     ],
-    "recovered_conditions": []
+    "recovered_conditions": [],
+    "expected": "visible state excludes Host system unavailable",
+    "observed": "matched:host_system_unavailable",
+    "retry_info": {},
+    "human_intervention_available": false
+  },
+  "hitl": {
+    "kind": "success",
+    "code": "CAPABILITY_COMPLETED",
+    "message": "all checkpoints passed",
+    "outputs": {
+      "balance": 17482.91
+    },
+    "step_id": null,
+    "evidence": [
+      "evidence/provider-backed/replay-hitl/replay-step-1.png",
+      "evidence/provider-backed/replay-hitl/replay-step-2.png",
+      "evidence/provider-backed/replay-hitl/replay-step-3.png",
+      "evidence/provider-backed/replay-hitl/resume-step-3.png"
+    ],
+    "recovered_conditions": [],
+    "expected": null,
+    "observed": null,
+    "retry_info": {},
+    "human_intervention_available": false
   }
 }

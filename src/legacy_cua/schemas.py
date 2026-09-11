@@ -98,6 +98,7 @@ class ApplicationFingerprint(StrictModel):
     route_pattern: str
     landmarks: list[str]
     digest: str
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
 
 
 class ApplicationRegistry(StrictModel):
@@ -153,7 +154,7 @@ class ExceptionRule(StrictModel):
     """Map a known visible state to a deliberate outcome."""
 
     rule_id: str
-    control: str
+    match_type: Literal["visible_text_contains"] = "visible_text_contains"
     contains_text: str
     outcome: Literal["business_outcome", "recoverable", "failure", "intervention"]
     code: str
@@ -281,3 +282,7 @@ class ExecutionResult(StrictModel):
     step_id: str | None = None
     evidence: list[str] = Field(default_factory=list)
     recovered_conditions: list[str] = Field(default_factory=list)
+    expected: str | None = None
+    observed: str | None = None
+    retry_info: dict[str, Any] = Field(default_factory=dict)
+    human_intervention_available: bool = False

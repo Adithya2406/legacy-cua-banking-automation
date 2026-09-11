@@ -1,14 +1,16 @@
 {
   "capability_id": "legacybank.get-savings-balance",
   "status": "active",
-  "provider": "local-lm-studio",
+  "provider": "deterministic-semantic-contract-validator",
   "gates": [
     {
       "gate": "structural_valid",
       "input_class": "artifact contract",
       "expected_result": true,
       "actual_result": true,
-      "evidence_path": "evidence/provider-backed/capability.draft.json"
+      "explanation": "Validated the typed artifact and cross-checked every step and checkpoint control against the bound Application Registry.",
+      "evidence_path": "evidence/provider-backed/capability.draft.json",
+      "registry_evidence_path": "evidence/provider-backed/application-registry.json"
     },
     {
       "gate": "semantic_valid",

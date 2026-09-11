@@ -4,18 +4,19 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 
 from .errors import AutomationError, ErrorCode
-from .schemas import CapabilityArtifact, CertificationStatus, ExecutionResult, OutcomeKind
+from .schemas import ApplicationRegistry, CapabilityArtifact, CertificationStatus, ExecutionResult, OutcomeKind
 
 
 class CapabilityCertifier:
     """Apply independent structural, semantic, behavioral, and approval gates."""
 
-    def certify(self, artifact: CapabilityArtifact, semantic_validator: Callable[[CapabilityArtifact], bool], alternate_runner: Callable[[], ExecutionResult], exceptional_runner: Callable[[], ExecutionResult], auto_approve: bool = False, reviewer: str = "cli-auto-approve") -> CapabilityArtifact:
+    def certify(self, artifact: CapabilityArtifact, registry: ApplicationRegistry, semantic_validator: Callable[[CapabilityArtifact], bool], alternate_runner: Callable[[], ExecutionResult], exceptional_runner: Callable[[], ExecutionResult], auto_approve: bool = False, reviewer: str = "cli-auto-approve") -> CapabilityArtifact:
         """
         Certify a draft capability and optionally activate it for reviewer testing.
 
         Input Parameter:
             artifact(CapabilityArtifact): Draft capability to certify.
+            registry(ApplicationRegistry): Registry used to validate all compiled control references.
             semantic_validator(Callable[[CapabilityArtifact], bool]): Semantic goal-to-artifact validation seam.
             alternate_runner(Callable[[], ExecutionResult]): Deterministic alternate-input verification.
             exceptional_runner(Callable[[], ExecutionResult]): Known exceptional-state verification.
@@ -25,7 +26,10 @@ class CapabilityCertifier:
         Output Parameter:
             output_parameter(CapabilityArtifact): Updated certified capability.
         """
-        artifact.certification.structural_valid = bool(CapabilityArtifact.model_validate(artifact.model_dump()))
+        validated = CapabilityArtifact.model_validate(artifact.model_dump())
+        control_references = [step.control for step in validated.steps]
+        control_references.extend(checkpoint.control for step in validated.steps for checkpoint in step.checkpoints)
+        artifact.certification.structural_valid = all(control in registry.controls for control in control_references)
         artifact.certification.semantic_valid = semantic_validator(artifact)
         artifact.certification.alternate_input_verified = alternate_runner().kind == OutcomeKind.SUCCESS
         artifact.certification.exceptional_state_verified = exceptional_runner().kind in {OutcomeKind.BUSINESS_OUTCOME, OutcomeKind.FAILURE}

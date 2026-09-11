@@ -1,6 +1,7 @@
 """LLM-driven observe-decide-act discovery loop."""
 
 from pathlib import Path
+from time import monotonic
 from urllib.parse import urlparse
 
 from .errors import AutomationError, ErrorCode
@@ -44,7 +45,7 @@ class DiscoveryEngine:
         self.policy_engine = PolicyEngine()
         self.ownership = SessionOwnershipController(surface, logger)
 
-    def run(self, goal: str, input_values: dict[str, str], max_steps: int = 8) -> tuple[list[DiscoveryTraceEntry], ApplicationRegistry]:
+    def run(self, goal: str, input_values: dict[str, str], max_steps: int = 8, timeout_seconds: float = 120.0) -> tuple[list[DiscoveryTraceEntry], ApplicationRegistry]:
         """
         Discover a goal-driven flow and emit a version-specific registry.
 
@@ -52,25 +53,41 @@ class DiscoveryEngine:
             goal(str): Natural-language goal.
             input_values(dict[str, str]): Ephemeral invocation data excluded from artifacts and logs.
             max_steps(int): Maximum model decisions before stopping.
+            timeout_seconds(float): Maximum elapsed discovery time before stopping.
 
         Output Parameter:
             output_parameter(tuple[list[DiscoveryTraceEntry], ApplicationRegistry]): Discovery trace and observed registry.
         """
         trace: list[DiscoveryTraceEntry] = []
+        started_at = monotonic()
         decisions: list[DiscoveryDecision] = []
         registry_controls = {}
         self.logger.register_sensitive_values(input_values)
         self.logger.event("discovery_started", "CUA-INFO-000", "semantic discovery started", provider=self.provider.__class__.__name__, model=getattr(self.provider, "model", None))
         policy = CapabilityPolicy(allowed_actions=list(ActionKind), allowed_domains=[urlparse(self.surface.current_url()).hostname or "localhost"], allowed_route_prefixes=["/"], maximum_risk=RiskClass.SAFE)
         for sequence in range(1, max_steps + 1):
+            if monotonic() - started_at >= timeout_seconds:
+                raise AutomationError(ErrorCode.DISCOVERY_TIMEOUT, "discovery elapsed-time budget exceeded")
             observation = self.surface.observe(self.evidence_dir / f"discovery-step-{sequence}.png")
-            decision = self.provider.decide(goal, observation, decisions)
+            try:
+                decision = self.provider.decide(goal, observation, decisions)
+            except Exception as error:
+                if getattr(self.surface, "headed", False):
+                    self.ownership.handoff("discovery-candidate", f"decision-{sequence}", "provider returned an invalid decision", Severity.LOW, observation.screenshot_path)
+                    observation = self.surface.observe(self.evidence_dir / f"discovery-resume-{sequence}.png")
+                    decision = self.provider.decide(goal, observation, decisions)
+                else:
+                    raise AutomationError(ErrorCode.MODEL_RESPONSE_INVALID, f"provider returned invalid decision: {error}") from error
             self.policy_engine.validate(policy, decision.action, observation.url, RiskClass.SAFE)
             observed = next((item for item in observation.controls if item.observed_id == decision.observed_id), None)
             if observed is None:
                 if getattr(self.surface, "headed", False):
                     self.ownership.handoff("discovery-candidate", f"decision-{sequence}", "model selected an unobserved control", Severity.LOW, observation.screenshot_path)
-                raise AutomationError(ErrorCode.MODEL_RESPONSE_INVALID, "model selected an unobserved control")
+                    observation = self.surface.observe(self.evidence_dir / f"discovery-resume-{sequence}.png")
+                    decision = self.provider.decide(goal, observation, decisions)
+                    observed = next((item for item in observation.controls if item.observed_id == decision.observed_id), None)
+                if observed is None:
+                    raise AutomationError(ErrorCode.MODEL_RESPONSE_INVALID, "model selected an unobserved control")
             control = control_from_observation(observed, decision.semantic_name)
             registry_controls[decision.semantic_name] = control
             value = input_values.get(decision.input_name or "")

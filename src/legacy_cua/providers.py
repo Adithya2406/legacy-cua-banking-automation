@@ -71,9 +71,9 @@ class OpenAIDiscoveryProvider(DiscoveryProvider):
         text_payload = json.dumps({"goal": goal, "observation": observation.model_dump(exclude={"screenshot_path"}), "history": [item.model_dump() for item in history]})
         system_prompt = (
             "You are a UI discovery compiler. Reason over the observed controls and app state. "
-            "Select exactly one observed_id that represents the next action. Return only JSON matching: "
+            "Select exactly one observed_id that represents the next action. The action value MUST be exactly one of input, activate, extract, navigate, or wait; never use type, click, read, output, or a suffixed value. Return only JSON matching: "
             "{\"action\":\"input|activate|extract\",\"observed_id\":\"...\",\"semantic_name\":\"...\","
-            "\"input_name\":\"member_id\"|null,\"output_name\":\"balance\"|null,\"reason\":\"...\",\"goal_complete\":true|false}."
+            "\"input_name\":\"member_id\"|null,\"output_name\":\"balance\"|null,\"reason\":\"...\",\"goal_complete\":true|false}. Example valid input decision: {\"action\":\"input\",\"observed_id\":\"custRefEntry\",\"semantic_name\":\"member_identifier_input\",\"input_name\":\"member_id\",\"output_name\":null,\"reason\":\"Use the labeled customer reference field.\",\"goal_complete\":false}."
             "Use input_name member_id and output_name balance when relevant. Keep reason short and specific."
         )
         screenshot_supplied = bool(observation.screenshot_path and Path(observation.screenshot_path).exists() and os.getenv("OPENAI_INCLUDE_SCREENSHOT", "true").lower() not in {"0", "false", "no"})
@@ -89,6 +89,27 @@ class OpenAIDiscoveryProvider(DiscoveryProvider):
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_content},
         ]
+        response_format = {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "DiscoveryDecision",
+                "strict": True,
+                "schema": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "action": {"type": "string", "enum": ["navigate", "input", "activate", "extract", "wait"]},
+                        "observed_id": {"type": "string"},
+                        "semantic_name": {"type": "string"},
+                        "input_name": {"type": ["string", "null"]},
+                        "output_name": {"type": ["string", "null"]},
+                        "reason": {"type": "string"},
+                        "goal_complete": {"type": "boolean"},
+                    },
+                    "required": ["action", "observed_id", "semantic_name", "input_name", "output_name", "reason", "goal_complete"],
+                },
+            },
+        }
 
         def _extract_json_object(raw: str) -> dict[str, object]:
             """
@@ -119,20 +140,6 @@ class OpenAIDiscoveryProvider(DiscoveryProvider):
                 decoded = json.loads(decoded)
             if not isinstance(decoded, dict):
                 raise TypeError(f"expected JSON object from model, got {type(decoded).__name__}")
-            action = str(decoded.get("action", "")).lower()
-            if action == "input":
-                decoded["semantic_name"] = "member_identifier_input"
-                decoded["input_name"] = decoded.get("input_name") or "member_id"
-                decoded["output_name"] = None
-            elif action == "activate":
-                decoded["semantic_name"] = "member_lookup_action"
-                decoded["input_name"] = None
-                decoded["output_name"] = None
-            elif action == "extract":
-                decoded["semantic_name"] = "savings_balance_output"
-                decoded["input_name"] = None
-                decoded["output_name"] = "balance"
-                decoded["goal_complete"] = True
             return decoded
 
         try:
@@ -140,36 +147,38 @@ class OpenAIDiscoveryProvider(DiscoveryProvider):
                 model=self.model,
                 temperature=0,
                 messages=messages,
-                response_format={"type": "json_object"},
+                response_format=response_format,
             )
             content = response.choices[0].message.content
             if not content:
                 raise ValueError("empty model response")
-            self._record_response_metadata(response, screenshot_supplied)
+            self._record_response_metadata(response, screenshot_supplied, fallback_used=False)
             decoded = _extract_json_object(content)
             return DiscoveryDecision.model_validate(decoded)
         except Exception:
             fallback_messages = [
                 {"role": "system", "content": "Return only valid JSON with keys action, observed_id, semantic_name, input_name, output_name, reason, goal_complete. Use member_id as input_name and balance as output_name when appropriate."},
-                {"role": "user", "content": user_content},
+                {"role": "user", "content": text_payload},
             ]
             response = self.client.chat.completions.create(
                 model=self.model,
                 temperature=0,
                 messages=fallback_messages,
+                response_format=response_format,
             )
-            self._record_response_metadata(response, screenshot_supplied)
+            self._record_response_metadata(response, False, fallback_used=True)
             content = response.choices[0].message.content or "{}"
             decoded = _extract_json_object(content)
             return DiscoveryDecision.model_validate(decoded)
 
-    def _record_response_metadata(self, response: object, screenshot_supplied: bool) -> None:
+    def _record_response_metadata(self, response: object, screenshot_supplied: bool, fallback_used: bool) -> None:
         """
         Retain non-secret provider metadata for the discovery audit log.
 
         Input Parameter:
             response(object): Provider response object.
             screenshot_supplied(bool): Whether visual evidence was sent to the model.
+            fallback_used(bool): Whether a text-only retry was used after the primary call failed.
 
         Output Parameter:
             output_parameter(None): This function returns no value.
@@ -179,6 +188,8 @@ class OpenAIDiscoveryProvider(DiscoveryProvider):
             "model": getattr(response, "model", self.model),
             "response_id": getattr(response, "id", None),
             "screenshot_supplied": screenshot_supplied,
+            "screenshot_attempted": screenshot_supplied or fallback_used,
+            "fallback_used": fallback_used,
             "prompt_tokens": getattr(usage, "prompt_tokens", None),
             "completion_tokens": getattr(usage, "completion_tokens", None),
         }

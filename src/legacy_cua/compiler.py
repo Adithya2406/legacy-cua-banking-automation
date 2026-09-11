@@ -52,10 +52,10 @@ class CapabilityCompiler:
             outputs={"balance": ParameterSpec(data_type="money", description="Current savings balance in USD.")},
             steps=steps,
             exception_rules=[
-                ExceptionRule(rule_id="member-not-found", control="member_not_found_message", contains_text="No matching customer record", outcome="business_outcome", code="MEMBER_NOT_FOUND"),
-                ExceptionRule(rule_id="transient-host-delay", control="transient_delay_message", contains_text="Temporary host delay", outcome="recoverable", code="TRANSIENT_HOST_DELAY"),
-                ExceptionRule(rule_id="application-error", control="application_error_message", contains_text="Host system unavailable", outcome="failure", code="CUA-RPL-004", severity=Severity.MEDIUM),
-                ExceptionRule(rule_id="supervisor-dialog", control="supervisor_dialog", contains_text="Supervisor verification", outcome="intervention", code="CUA-HITL-001", severity=Severity.HIGH),
+                ExceptionRule(rule_id="member-not-found", contains_text="No matching customer record", outcome="business_outcome", code="MEMBER_NOT_FOUND"),
+                ExceptionRule(rule_id="transient-host-delay", contains_text="Temporary host delay", outcome="recoverable", code="TRANSIENT_HOST_DELAY"),
+                ExceptionRule(rule_id="application-error", contains_text="Host system unavailable", outcome="failure", code="CUA-RPL-004", severity=Severity.MEDIUM),
+                ExceptionRule(rule_id="supervisor-dialog", contains_text="Supervisor verification", outcome="intervention", code="CUA-HITL-001", severity=Severity.HIGH),
             ],
             policy=policy,
         )

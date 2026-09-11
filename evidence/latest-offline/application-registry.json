@@ -1,0 +1,88 @@
+{
+  "schema_version": "1.0",
+  "fingerprint": {
+    "family": "legacybank-servicing",
+    "version": "1.0",
+    "tenant": "demo-credit-union",
+    "title": "Heritage Core 1.0 - Demo Credit Union",
+    "route_pattern": "/*",
+    "landmarks": [
+      "Customer Reference",
+      "Execute Inquiry"
+    ],
+    "digest": "6a73831ce473bc77",
+    "confidence": 1.0
+  },
+  "controls": {
+    "member_identifier_input": {
+      "control_id": "custRefEntry",
+      "semantic_name": "member_identifier_input",
+      "observed_name": "Customer Reference",
+      "role": "textbox",
+      "locators": [
+        {
+          "strategy": "accessible",
+          "value": "Customer Reference",
+          "role": "textbox",
+          "weight": 100
+        },
+        {
+          "strategy": "label",
+          "value": "Customer Reference",
+          "role": null,
+          "weight": 95
+        },
+        {
+          "strategy": "dom_id",
+          "value": "custRefEntry",
+          "role": null,
+          "weight": 60
+        }
+      ],
+      "frame_path": []
+    },
+    "member_lookup_action": {
+      "control_id": "inquiryGo",
+      "semantic_name": "member_lookup_action",
+      "observed_name": "Execute Inquiry",
+      "role": "button",
+      "locators": [
+        {
+          "strategy": "accessible",
+          "value": "Execute Inquiry",
+          "role": "button",
+          "weight": 100
+        },
+        {
+          "strategy": "dom_id",
+          "value": "inquiryGo",
+          "role": null,
+          "weight": 60
+        }
+      ],
+      "frame_path": []
+    },
+    "savings_balance_output": {
+      "control_id": "availAmt",
+      "semantic_name": "savings_balance_output",
+      "observed_name": "Available Amount",
+      "role": "status",
+      "locators": [
+        {
+          "strategy": "accessible",
+          "value": "Available Amount",
+          "role": "status",
+          "weight": 100
+        },
+        {
+          "strategy": "dom_id",
+          "value": "availAmt",
+          "role": null,
+          "weight": 60
+        }
+      ],
+      "frame_path": []
+    }
+  },
+  "discovered_at": "2026-09-11T20:38:03.892117Z"
+}

@@ -1,5 +1,5 @@
 pydantic>=2.8,<3
 playwright>=1.46,<2
 openai>=1.40,<2
-pytest>=8.3,<9
 python-dotenv>=1.0,<2
+pytest>=8.3,<9

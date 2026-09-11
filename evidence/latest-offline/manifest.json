@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "run_id": "run-1789159082879",
+  "generated_at": "2026-09-11T20:38:06Z",
+  "discovery_mode": "offline-fixture",
+  "provider_model": null,
+  "model_input_modalities": [
+    "ui_metadata"
+  ],
+  "screenshot_requested": true,
+  "screenshot_supplied": false,
+  "screenshot_attempted": false,
+  "hitl_mode": "not-run",
+  "synthetic_data_only": true,
+  "claim": "Offline fixture evidence is explicitly labeled and is not a genuine LLM run."
+}

@@ -28,7 +28,7 @@
     {
       "step_id": "step-1",
       "action": "input",
-      "control": "member_identifier_input",
+      "control": "customer_reference_input",
       "value": {
         "input_name": "member_id"
       },
@@ -41,7 +41,7 @@
           "checkpoint_id": "member-input-matches",
           "level": "action",
           "assertion": "control_value_equals",
-          "control": "member_identifier_input",
+          "control": "customer_reference_input",
           "expected": {
             "input_name": "member_id"
           }
@@ -51,7 +51,7 @@
     {
       "step_id": "step-2",
       "action": "activate",
-      "control": "member_lookup_action",
+      "control": "execute_inquiry_button",
       "value": null,
       "output_name": null,
       "risk": "safe",
@@ -62,7 +62,7 @@
     {
       "step_id": "step-3",
       "action": "extract",
-      "control": "savings_balance_output",
+      "control": "available_amount_status",
       "value": null,
       "output_name": "balance",
       "risk": "safe",
@@ -73,7 +73,7 @@
           "checkpoint_id": "balance-is-money",
           "level": "goal",
           "assertion": "money",
-          "control": "savings_balance_output",
+          "control": "available_amount_status",
           "expected": null
         }
       ]
@@ -82,7 +82,7 @@
   "exception_rules": [
     {
       "rule_id": "member-not-found",
-      "control": "member_not_found_message",
+      "match_type": "visible_text_contains",
       "contains_text": "No matching customer record",
       "outcome": "business_outcome",
       "code": "MEMBER_NOT_FOUND",
@@ -90,7 +90,7 @@
     },
     {
       "rule_id": "transient-host-delay",
-      "control": "transient_delay_message",
+      "match_type": "visible_text_contains",
       "contains_text": "Temporary host delay",
       "outcome": "recoverable",
       "code": "TRANSIENT_HOST_DELAY",
@@ -98,7 +98,7 @@
     },
     {
       "rule_id": "application-error",
-      "control": "application_error_message",
+      "match_type": "visible_text_contains",
       "contains_text": "Host system unavailable",
       "outcome": "failure",
       "code": "CUA-RPL-004",
@@ -106,7 +106,7 @@
     },
     {
       "rule_id": "supervisor-dialog",
-      "control": "supervisor_dialog",
+      "match_type": "visible_text_contains",
       "contains_text": "Supervisor verification",
       "outcome": "intervention",
       "code": "CUA-HITL-001",

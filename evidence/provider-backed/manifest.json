@@ -1,13 +1,17 @@
 {
   "schema_version": "1.0",
-  "run_id": "run-1789152546798",
-  "generated_at": "2026-09-11T18:49:28Z",
+  "run_id": "run-1789158250564",
+  "generated_at": "2026-09-11T20:24:41Z",
   "discovery_mode": "provider-backed",
-  "provider_model": "openai/gpt-oss-20b",
+  "provider_model": "google/gemma-4-12b",
   "model_input_modalities": [
-    "ui_metadata"
+    "ui_metadata",
+    "screenshot"
   ],
-  "hitl_mode": "automated-simulation-not-valid-as-human-evidence",
+  "screenshot_requested": true,
+  "screenshot_supplied": true,
+  "screenshot_attempted": true,
+  "hitl_mode": "interactive-human",
   "synthetic_data_only": true,
   "claim": "Discovery used the configured OpenAI-compatible provider."
 }

@@ -65,7 +65,10 @@ class SessionOwnershipController:
         if operator:
             operator(request)
         else:
-            input("Automation paused in the visible browser. Resolve the issue, then press Enter to resume: ")
+            try:
+                input("Automation paused in the visible browser. Resolve the issue, then press Enter to resume: ")
+            except EOFError as error:
+                raise RuntimeError("interactive human handoff requires a terminal with stdin") from error
         self._resume.set()
         self.owner = Owner.AUTOMATION
         if hasattr(self.surface, "set_owner"):

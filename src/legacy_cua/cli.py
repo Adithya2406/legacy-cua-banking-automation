@@ -80,7 +80,7 @@ def discover(arguments: argparse.Namespace) -> None:
     provider = OfflineSemanticFixtureProvider() if arguments.offline else OpenAIDiscoveryProvider(arguments.model)
     surface = PlaywrightSurfaceDriver(arguments.url, headed=arguments.headed)
     try:
-        engine = DiscoveryEngine(surface, provider, JsonLogger(output / "discovery.jsonl"), output / "screenshots")
+        engine = DiscoveryEngine(surface, provider, JsonLogger(output / "discovery.jsonl", run_id=getattr(arguments, "run_id", None)), output / "screenshots")
         trace, registry = engine.run(arguments.goal, {"member_id": arguments.member_id})
         artifact = CapabilityCompiler().compile(trace, registry)
         store = ArtifactStore()
@@ -105,13 +105,14 @@ def certify(arguments: argparse.Namespace) -> None:
     artifact_path = Path(arguments.artifact)
     registry_path = Path(arguments.registry)
     artifact = store.load_artifact(artifact_path)
+    registry = store.load_registry(registry_path)
     work = artifact_path.parent
     active = _active_copy(artifact)
     alternate = lambda: _run_once(arguments.url, active, registry_path, "10002", work / "certification-alternate.jsonl", work / "certification-alternate")
     exceptional = lambda: _run_once(arguments.url, active, registry_path, "40400", work / "certification-exception.jsonl", work / "certification-exception")
     alternate_result = alternate()
     exceptional_result = exceptional()
-    certified = CapabilityCertifier().certify(artifact, offline_semantic_validator, lambda: alternate_result, lambda: exceptional_result, auto_approve=arguments.auto_approve, reviewer=arguments.reviewer)
+    certified = CapabilityCertifier().certify(artifact, registry, offline_semantic_validator, lambda: alternate_result, lambda: exceptional_result, auto_approve=arguments.auto_approve, reviewer=arguments.reviewer)
     destination = Path(arguments.output)
     store.save_artifact(certified, destination)
     report = {
@@ -124,7 +125,9 @@ def certify(arguments: argparse.Namespace) -> None:
                 "input_class": "artifact contract",
                 "expected_result": True,
                 "actual_result": bool(certified.certification.structural_valid),
+                "explanation": "Validated the typed artifact and cross-checked every step and checkpoint control against the bound Application Registry.",
                 "evidence_path": str(artifact_path),
+                "registry_evidence_path": str(registry_path),
             },
             {
                 "gate": "semantic_valid",
@@ -220,7 +223,7 @@ def demo_e2e(arguments: argparse.Namespace) -> None:
     base = Path(arguments.output)
     url = f"http://127.0.0.1:{arguments.port}/"
     run_id = f"run-{int(time.time() * 1000)}"
-    discover(argparse.Namespace(output=str(base), offline=arguments.offline, model=arguments.model, url=url, headed=False, goal="Look up member 10001 and return their current savings balance", member_id="10001"))
+    discover(argparse.Namespace(output=str(base), offline=arguments.offline, model=arguments.model, url=url, headed=False, goal="Look up member 10001 and return their current savings balance", member_id="10001", run_id=run_id))
     certify(argparse.Namespace(artifact=str(base / "capability.draft.json"), registry=str(base / "application-registry.json"), url=url, auto_approve=True, reviewer="reviewer-fast-path", output=str(base / "capability.active.json")))
     active = ArtifactStore().load_artifact(base / "capability.active.json")
     success = _run_once(url, active, base / "application-registry.json", "10003", base / "replay-success.jsonl", base / "replay-success")
@@ -228,8 +231,11 @@ def demo_e2e(arguments: argparse.Namespace) -> None:
     recovered = _run_once(url, active, base / "application-registry.json", "40800", base / "replay-recovered.jsonl", base / "replay-recovered")
     failure = _run_once(url, active, base / "application-registry.json", "50000", base / "replay-failure.jsonl", base / "replay-failure")
     (base / "results.json").write_text(json.dumps({"success": success.model_dump(mode="json"), "not_found": exceptional.model_dump(mode="json"), "recovered": recovered.model_dump(mode="json"), "failure": failure.model_dump(mode="json")}, indent=2), encoding="utf-8")
-    screenshot_enabled = os.getenv("OPENAI_INCLUDE_SCREENSHOT", "true").lower() not in {"0", "false", "no"}
-    (base / "manifest.json").write_text(json.dumps({"schema_version": "1.0", "run_id": run_id, "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "discovery_mode": "offline-fixture" if arguments.offline else "provider-backed", "provider_model": None if arguments.offline else arguments.model, "model_input_modalities": ["ui_metadata"] if arguments.offline else ["ui_metadata", "screenshot"] if screenshot_enabled else ["ui_metadata"], "synthetic_data_only": True, "claim": "Offline fixture evidence is explicitly labeled and is not a genuine LLM run." if arguments.offline else "Discovery used the configured OpenAI-compatible provider."}, indent=2), encoding="utf-8")
+    screenshot_requested = os.getenv("OPENAI_INCLUDE_SCREENSHOT", "true").lower() not in {"0", "false", "no"}
+    discovery_events = [json.loads(line) for line in (base / "discovery.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
+    screenshot_supplied = any(event.get("provider_metadata", {}).get("screenshot_supplied") is True for event in discovery_events)
+    screenshot_attempted = any(event.get("provider_metadata", {}).get("screenshot_attempted") is True for event in discovery_events)
+    (base / "manifest.json").write_text(json.dumps({"schema_version": "1.0", "run_id": run_id, "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "discovery_mode": "offline-fixture" if arguments.offline else "provider-backed", "provider_model": None if arguments.offline else arguments.model, "model_input_modalities": ["ui_metadata"] if arguments.offline else ["ui_metadata", "screenshot"] if screenshot_supplied else ["ui_metadata"], "screenshot_requested": screenshot_requested, "screenshot_supplied": screenshot_supplied, "screenshot_attempted": screenshot_attempted, "hitl_mode": "not-run", "synthetic_data_only": True, "claim": "Offline fixture evidence is explicitly labeled and is not a genuine LLM run." if arguments.offline else "Discovery used the configured OpenAI-compatible provider."}, indent=2), encoding="utf-8")
     print((base / "results.json").read_text(encoding="utf-8"))
 
 

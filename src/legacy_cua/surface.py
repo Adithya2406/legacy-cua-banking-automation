@@ -94,8 +94,9 @@ class PlaywrightSurfaceDriver(SurfaceDriver):
             for (const type of ['click','input','change']) {
               document.addEventListener(type, e => {
                 if (window.__cuaOwner === 'human') window.__cuaHumanEvents.push({
-                  type, tag: e.target.tagName, id: e.target.id || null,
-                  name: e.target.getAttribute('aria-label') || e.target.innerText || e.target.value || ''
+                                    type, tag: e.target.tagName, id: e.target.id || null,
+                                    role: e.target.getAttribute('role') || null,
+                                    name: e.target.getAttribute('aria-label') || e.target.getAttribute('name') || null
                 });
               }, true);
             }
