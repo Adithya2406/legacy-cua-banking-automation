@@ -1,0 +1,54 @@
+{
+  "success": {
+    "kind": "success",
+    "code": "CAPABILITY_COMPLETED",
+    "message": "all checkpoints passed",
+    "outputs": {
+      "balance": 17482.91
+    },
+    "step_id": null,
+    "evidence": [
+      "evidence/provider-backed/replay-success/replay-step-1.png",
+      "evidence/provider-backed/replay-success/replay-step-2.png"
+    ],
+    "recovered_conditions": []
+  },
+  "not_found": {
+    "kind": "business_outcome",
+    "code": "MEMBER_NOT_FOUND",
+    "message": "No matching customer record",
+    "outputs": {},
+    "step_id": "step-3",
+    "evidence": [
+      "evidence/provider-backed/replay-not-found/replay-step-3.png"
+    ],
+    "recovered_conditions": []
+  },
+  "recovered": {
+    "kind": "success",
+    "code": "CAPABILITY_COMPLETED",
+    "message": "all checkpoints passed",
+    "outputs": {
+      "balance": 17482.91
+    },
+    "step_id": null,
+    "evidence": [
+      "evidence/provider-backed/replay-recovered/replay-step-1.png",
+      "evidence/provider-backed/replay-recovered/replay-step-2.png"
+    ],
+    "recovered_conditions": [
+      "TRANSIENT_HOST_DELAY"
+    ]
+  },
+  "failure": {
+    "kind": "failure",
+    "code": "CUA-RPL-004",
+    "message": "Host system unavailable",
+    "outputs": {},
+    "step_id": "step-3",
+    "evidence": [
+      "evidence/provider-backed/replay-failure/replay-step-3.png"
+    ],
+    "recovered_conditions": []
+  }
+}

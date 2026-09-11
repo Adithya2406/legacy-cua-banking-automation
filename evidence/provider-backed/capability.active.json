@@ -1,0 +1,141 @@
+{
+  "schema_version": "1.0",
+  "capability_id": "legacybank.get-savings-balance",
+  "version": "1.0.0",
+  "name": "Get Savings Balance",
+  "description": "Look up a member and return the current Savings balance.",
+  "application_family": "legacybank-servicing",
+  "registry_digest": "6a73831ce473bc77",
+  "inputs": {
+    "member_id": {
+      "data_type": "string",
+      "required": true,
+      "sensitive": true,
+      "description": "Synthetic member identifier.",
+      "pattern": "^[0-9]{5}$"
+    }
+  },
+  "outputs": {
+    "balance": {
+      "data_type": "money",
+      "required": true,
+      "sensitive": false,
+      "description": "Current savings balance in USD.",
+      "pattern": null
+    }
+  },
+  "steps": [
+    {
+      "step_id": "step-1",
+      "action": "input",
+      "control": "member_identifier_input",
+      "value": {
+        "input_name": "member_id"
+      },
+      "output_name": null,
+      "risk": "safe",
+      "safe_to_retry": true,
+      "retries": 1,
+      "checkpoints": [
+        {
+          "checkpoint_id": "member-input-matches",
+          "level": "action",
+          "assertion": "control_value_equals",
+          "control": "member_identifier_input",
+          "expected": {
+            "input_name": "member_id"
+          }
+        }
+      ]
+    },
+    {
+      "step_id": "step-2",
+      "action": "activate",
+      "control": "member_lookup_action",
+      "value": null,
+      "output_name": null,
+      "risk": "safe",
+      "safe_to_retry": true,
+      "retries": 1,
+      "checkpoints": []
+    },
+    {
+      "step_id": "step-3",
+      "action": "extract",
+      "control": "savings_balance_output",
+      "value": null,
+      "output_name": "balance",
+      "risk": "safe",
+      "safe_to_retry": true,
+      "retries": 1,
+      "checkpoints": [
+        {
+          "checkpoint_id": "balance-is-money",
+          "level": "goal",
+          "assertion": "money",
+          "control": "savings_balance_output",
+          "expected": null
+        }
+      ]
+    }
+  ],
+  "exception_rules": [
+    {
+      "rule_id": "member-not-found",
+      "control": "member_not_found_message",
+      "contains_text": "No matching customer record",
+      "outcome": "business_outcome",
+      "code": "MEMBER_NOT_FOUND",
+      "severity": null
+    },
+    {
+      "rule_id": "transient-host-delay",
+      "control": "transient_delay_message",
+      "contains_text": "Temporary host delay",
+      "outcome": "recoverable",
+      "code": "TRANSIENT_HOST_DELAY",
+      "severity": null
+    },
+    {
+      "rule_id": "application-error",
+      "control": "application_error_message",
+      "contains_text": "Host system unavailable",
+      "outcome": "failure",
+      "code": "CUA-RPL-004",
+      "severity": "medium"
+    },
+    {
+      "rule_id": "supervisor-dialog",
+      "control": "supervisor_dialog",
+      "contains_text": "Supervisor verification",
+      "outcome": "intervention",
+      "code": "CUA-HITL-001",
+      "severity": "high"
+    }
+  ],
+  "policy": {
+    "allowed_actions": [
+      "input",
+      "activate",
+      "extract",
+      "wait"
+    ],
+    "allowed_domains": [
+      "127.0.0.1",
+      "localhost"
+    ],
+    "allowed_route_prefixes": [
+      "/"
+    ],
+    "maximum_risk": "safe"
+  },
+  "certification": {
+    "structural_valid": true,
+    "semantic_valid": true,
+    "alternate_input_verified": true,
+    "exceptional_state_verified": true,
+    "reviewer": "reviewer-fast-path",
+    "approved_at": "2026-09-11T18:49:25.831325Z"
+  },
+  "status": "active"
+}

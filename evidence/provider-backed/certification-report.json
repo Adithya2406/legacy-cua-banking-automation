@@ -1,0 +1,37 @@
+{
+  "capability_id": "legacybank.get-savings-balance",
+  "status": "active",
+  "provider": "local-lm-studio",
+  "gates": [
+    {
+      "gate": "structural_valid",
+      "input_class": "artifact contract",
+      "expected_result": true,
+      "actual_result": true,
+      "evidence_path": "evidence/provider-backed/capability.draft.json"
+    },
+    {
+      "gate": "semantic_valid",
+      "input_class": "business semantics",
+      "expected_result": true,
+      "actual_result": true,
+      "validator": "offline_semantic_validator",
+      "explanation": "Checked that the capability includes a member_id input, a balance output, at least three steps, and banking-specific Savings semantics.",
+      "evidence_path": "evidence/provider-backed/capability.draft.json"
+    },
+    {
+      "gate": "alternate_input_verified",
+      "input_class": "alternate member input",
+      "expected_result": "success",
+      "actual_result": "success",
+      "evidence_path": "evidence/provider-backed/certification-alternate.jsonl"
+    },
+    {
+      "gate": "exceptional_state_verified",
+      "input_class": "not-found exception",
+      "expected_result": "business_outcome or failure",
+      "actual_result": "business_outcome",
+      "evidence_path": "evidence/provider-backed/certification-exception.jsonl"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=72"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "legacy-cua"
+version = "1.0.0"
+description = "Discover once, certify, and deterministically replay legacy UI capabilities."
+requires-python = ">=3.11"
+dependencies = [
+  "pydantic>=2.8,<3",
+  "playwright>=1.46,<2",
+  "openai>=1.40,<2",
+  "python-dotenv>=1.0,<2",
+]
+
+[project.scripts]
+legacy-cua = "legacy_cua.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

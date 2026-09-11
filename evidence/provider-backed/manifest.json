@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "run_id": "run-1789152546798",
+  "generated_at": "2026-09-11T18:49:28Z",
+  "discovery_mode": "provider-backed",
+  "provider_model": "openai/gpt-oss-20b",
+  "model_input_modalities": [
+    "ui_metadata"
+  ],
+  "hitl_mode": "automated-simulation-not-valid-as-human-evidence",
+  "synthetic_data_only": true,
+  "claim": "Discovery used the configured OpenAI-compatible provider."
+}
